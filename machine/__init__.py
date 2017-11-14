@@ -6,6 +6,7 @@ import collections
 
 kSTATES_PREFIX = "States"
 kALPHA_PREFIX = "Alphabet"
+kTAPEALPHA_PREFIX = "TapeAlphabet"
 kDTABLE_PREFIX = "D-Table"
 kTTABLE_PREFIX = "T-Table"
 kSTART_PREFIX = "Start"
@@ -15,6 +16,10 @@ kEXEC_ACCEPT = "accepted"
 kEXEC_TAPE = "tape"
 kLAMBA = ""
 kEMPTYSET = "∅"
+kBLANK = " "
+kLEFT = "←"
+kRIGHT = "→"
+
 
 def generateConfigDFA():
     config = dict()
@@ -44,18 +49,6 @@ def generateConfigNFAlamba():
     filepath = os.path.join(os.path.expanduser("~"), "Desktop", "test_config.nfal")
     with open(filepath, "w+", encoding='utf-8') as f:
         json.dump(config, f, sort_keys=True, indent=4, ensure_ascii=False)
-
-
-def testDFA():
-    test = DFA(filepath=os.path.join(os.path.expanduser("~"), "Desktop", "test_config.dfa"))
-    tape = Tape("aaabbabaabc")
-    test.load(tape)
-    test.exec()
-    # print(test.states, test.alpha, test.d_table, test.start, test.accept)
-
-
-def testNFAlamba():
-    return NFAlambda(filepath=os.path.join(os.path.expanduser("~"), "Desktop", "example.nfal"))
 
 
 class Machine:
@@ -101,6 +94,133 @@ class Machine:
         :param Tape tape: tape to load into machine
         """
         self.loaded_tape = tape
+
+
+class BadTMTransition(Exception):
+    pass
+
+
+class TMTransitionUndefined(Exception):
+    pass
+
+
+class TMTransition():
+    def __init__(self, *args):
+        if len(args) == 3:
+            self.state = args[0]
+            self.character = args[1]
+            self.direction = args[2]
+        elif len(args) == 1:
+            self.__parse(*args)
+        else:
+            raise BadTMTransition(*args)
+
+    def __str__(self) -> str:
+        return "{0}, {1}, {2}".format(self.state, self.character, self.direction)
+
+    def __parse(self, string: str) -> None:
+        parts = string.split(",")
+        parts = [x.strip(" ") for x in parts]
+        self.state = parts[0]
+        self.character = parts[1]
+        self.direction = parts[2]
+
+
+class TM(Machine):
+    def load(self, tape: Tape) -> None:
+        super().load(tape)
+
+    def config(self, filepath: str) -> None:
+        with open(filepath, "r", encoding="utf-8") as f:
+            config = json.load(f)
+            self.states = set(config[kSTATES_PREFIX])
+            self.start = config[kSTART_PREFIX]
+            if not self.start in self.states:
+                raise InvalidConfigBlock("Start state not in states", self.start)
+            self.accept = set(config[kACCEPT_PREFIX])
+            if not self.accept.issubset(self.states):
+                raise InvalidConfigBlock("Accepting state not subset states", self.accept)
+            self.alpha = set(config[kALPHA_PREFIX])
+            self.tapealpha = set(config[kTAPEALPHA_PREFIX])
+            self.d_table = config[kDTABLE_PREFIX]
+            for state in self.d_table.keys():
+                for char in state.keys():
+                    try:
+                        self.d_table[state][char] = TMTransition(self.d_table[state][char])
+                        if not self.d_table[state][char].state in self.states:
+                            raise InvalidConfigBlock("TMTransition not in states", self.d_table[state][char].state)
+                        if not self.d_table[state][char].character in self.tapealpha:
+                            raise InvalidConfigBlock("TMTransition not in tapealpha",
+                                                     self.d_table[state][char].character)
+                        if not self.d_table[state][char].direction in set(kLEFT, kRIGHT):
+                            raise InvalidConfigBlock("TMTransition not in directions",
+                                                     self.d_table[state][char].direction)
+                    except KeyError:
+                        pass
+
+    def get_t(self, state: str, character: str) -> TMTransition:
+        try:
+            trams = self.d_table[state][character]
+        except:
+            raise TMTransitionUndefined(state, character)
+        return
+
+    def get_c(self) -> str:
+        ret_val = "{0}{1}{2}".format(str(self.loaded_tape)[:self.current_position - 1], \
+                                     str(self.current_state), \
+                                     str(self.loaded_tape)[self.current_position:])
+        return ret_val
+
+    def step(self) -> str:
+        trans = self.get_t(self.current_state, self.loaded_tape.read(self.current_position))
+        self.current_state = trans.state
+        self.loaded_tape.write(trans.character, self.current_position)
+        if trans.direction == kRIGHT:
+            self.current_position += 1
+        else:
+            self.current_position -= 1
+        ret_val = "⊢{0}".format(self.get_c())
+        return ret_val
+
+    def is_accepted(self):
+        return self.current_state in self.accept
+
+    def __gen_config(self)->dict:
+        config = dict()
+        config[kSTATES_PREFIX] = list(self.states)
+        config[kSTATES_PREFIX].sort()
+        config[kSTART_PREFIX] = self.start
+        config[kACCEPT_PREFIX] = list(self.accept)
+        config[kACCEPT_PREFIX].sort()
+        config[kALPHA_PREFIX] = list(self.alpha)
+        config[kALPHA_PREFIX].sort()
+        config[kTAPEALPHA_PREFIX] = list(self.tapealpha)
+        config[kTAPEALPHA_PREFIX].sort()
+        config[kDTABLE_PREFIX] = collections.defaultdict(dict)
+        for state in self.d_table.keys():
+            for char in state.keys():
+                try:
+                    config[kDTABLE_PREFIX][state][char] = str(self.get_t(state, char))
+                except TMTransitionUndefined:
+                    pass
+        return config
+
+    def export(self, filepath: str) -> None:
+        with open(filepath, "w+", encoding="utf-8") as f:
+            json.dump(f, self.__gen_config(), indent=4, sort_keys=True)
+
+    def exec(self):
+        super().exec()
+
+    def __init__(self, filepath=None):
+        # super().__init__(filepath)
+        self.current_state = None
+        self.current_position = 0
+        self.loaded_tape = None
+        self.config(filepath)
+
+    def dumps(self) -> str:
+        return json.dumps(self.__gen_config(), indent=4, sort_keys=True)
 
 
 class DFA(Machine):
@@ -257,8 +377,10 @@ class DFA(Machine):
         ret[kEXEC_TAPE] = str(self.loaded_tape)
         return ret
 
+
 class InvalidCharacterInTape(Exception):
     pass
+
 
 class NFAlambda(Machine):
     def __init__(self, filepath=None):
@@ -540,6 +662,4 @@ class Tape:
 
 
 if __name__ == "__main__":
-    test = NFAlambda("../configs/ex_341.nfal")
-    test_prime = test.convert()
     pass
