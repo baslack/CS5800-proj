@@ -243,7 +243,7 @@ class TM(Machine):
         config[kTAPEALPHA_PREFIX].sort()
         config[kDTABLE_PREFIX] = collections.defaultdict(dict)
         for state in self.d_table.keys():
-            for char in state.keys():
+            for char in self.d_table[state].keys():
                 try:
                     config[kDTABLE_PREFIX][state][char] = str(self.__get_t(state, char))
                 except TMTransitionUndefined:
@@ -258,7 +258,7 @@ class TM(Machine):
         :return:
         '''
         with open(filepath, "w+", encoding="utf-8") as f:
-            json.dump(f, self.__gen_config(), indent=4, sort_keys=True)
+            json.dump(f, self.__gen_config(), indent=4, sort_keys=True, ensure_ascii=False)
 
     def exec(self) -> list:
         '''
@@ -310,7 +310,7 @@ class TM(Machine):
         JSON formatted string
         :return: json config
         '''
-        return json.dumps(self.__gen_config(), indent=4, sort_keys=True)
+        return json.dumps(self.__gen_config(), indent=4, sort_keys=True, ensure_ascii=False)
 
 
 class DFA(Machine):
@@ -754,8 +754,9 @@ class Tape:
 if __name__ == "__main__":
     filepath = os.path.join(os.path.abspath("/"), "Dropbox",  "CS5800", "proj",  "configs", "ex_821.tm")
     myMT = TM(filepath)
-    myTape = Tape("БabbbababbaБ")
+    myTape = Tape("БabbbaababbaБ")
     myMT.load(myTape)
     #print(myMT.get_c())
     for config in myMT.exec():
         print(config)
+    print(myMT.dumps())
