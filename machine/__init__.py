@@ -750,13 +750,90 @@ class Tape:
     def write(self, character, position):
         self.characters[position] = character
 
+class TMTape(Tape):
+    '''
+    Implements an infinite tape for use in
+    Turing Machines
+    '''
+    def write(self, character: str, position: int)->None:
+        '''
+        writes a character to a specified position
+        on the tape.
+        :param character: character to be added to the string
+        :param position: index of the location to add the character
+        :return:
+        '''
+        if position == 0:
+            self.pos_index[0] = character
+            self.neg_index[0] = character
+        elif position > 0:
+            try:
+                self.pos_index[position] = character
+            except IndexError:
+                for i in range(position - len(self.pos_index) + 1):
+                    self.pos_index.append(kBLANK)
+                self.pos_index[position] = character
+        else:
+            try:
+                self.neg_index[-position] = character
+            except IndexError:
+                for i in range((-position) - len(self.neg_index) + 1):
+                    self.neg_index.append(kBLANK)
+                self.neg_index[position] = character
+
+
+    def __str__(self)->str:
+        '''
+        returns a string of the contents of the tape
+        :return: tape string
+        '''
+        neg_str = ""
+        pos_str = ""
+        for character in self.neg_index[1:]:
+            neg_str = character + neg_str
+        for character in self.pos_index[0:]:
+            pos_str = pos_str + character
+        return "{0}{1}".format(neg_str,pos_str)
+
+    def read(self, position: int)->str:
+        '''
+        gets the character at the specified position.
+        because the tape is infinite, if it's outside
+        of the previously specified range, returns a
+        blank character
+        :param position: index to read
+        :return: the character at that position
+        '''
+        try:
+            if position >= 0:
+                return self.pos_index[position]
+            else:
+                return self.neg_index[-position]
+        except IndexError:
+            return kBLANK
+
+
+    def __init__(self, in_string):
+        '''
+        returns an instance of the TMtape class
+        based on the input string
+        :param in_string:
+        '''
+        self.neg_index = list()
+        self.pos_index = list()
+        self.pos_index.append(kBLANK)
+        for character in in_string:
+            self.pos_index.append(character)
+        self.pos_index.append(kBLANK)
+        self.neg_index.append(kBLANK)
+
 
 if __name__ == "__main__":
     filepath = os.path.join(os.path.abspath("/"), "Dropbox",  "CS5800", "proj",  "configs", "ex_821.tm")
     myMT = TM(filepath)
-    myTape = Tape("БabbbaababbaБ")
+    myTape = TMTape("abbbababba")
     myMT.load(myTape)
     #print(myMT.get_c())
     for config in myMT.exec():
         print(config)
-    print(myMT.dumps())
+    # print(myMT.dumps())
