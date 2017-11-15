@@ -16,7 +16,7 @@ kEXEC_ACCEPT = "accepted"
 kEXEC_TAPE = "tape"
 kLAMBA = ""
 kEMPTYSET = "∅"
-kBLANK = " "
+kBLANK = "Б"
 kLEFT = "←"
 kRIGHT = "→"
 
@@ -127,10 +127,22 @@ class TMTransition():
 
 
 class TM(Machine):
-    def load(self, tape: Tape) -> None:
+    def load(self, tape: "Tape") -> None:
+        '''
+        loads a "tape" object into the machine
+        :param tape: tape containing string to be processed
+        :return:
+        '''
         super().load(tape)
 
     def config(self, filepath: str) -> None:
+        '''
+        configures the Turing Machine with a
+        given config file. Config files are
+        JSON formatted text files.
+        :param filepath: file name and path to the config file
+        :return:
+        '''
         with open(filepath, "r", encoding="utf-8") as f:
             config = json.load(f)
             self.states = set(config[kSTATES_PREFIX])
@@ -144,35 +156,58 @@ class TM(Machine):
             self.tapealpha = set(config[kTAPEALPHA_PREFIX])
             self.d_table = config[kDTABLE_PREFIX]
             for state in self.d_table.keys():
-                for char in state.keys():
+                for char in self.d_table[state].keys():
                     try:
-                        self.d_table[state][char] = TMTransition(self.d_table[state][char])
-                        if not self.d_table[state][char].state in self.states:
-                            raise InvalidConfigBlock("TMTransition not in states", self.d_table[state][char].state)
-                        if not self.d_table[state][char].character in self.tapealpha:
-                            raise InvalidConfigBlock("TMTransition not in tapealpha",
-                                                     self.d_table[state][char].character)
-                        if not self.d_table[state][char].direction in set(kLEFT, kRIGHT):
-                            raise InvalidConfigBlock("TMTransition not in directions",
-                                                     self.d_table[state][char].direction)
+                        trans = TMTransition(self.d_table[state][char])
+                        if not trans.state in self.states:
+                            raise InvalidConfigBlock("TMTransition not in states", trans.state)
+                        if not trans.character in self.tapealpha:
+                            raise InvalidConfigBlock("TMTransition not in tapealpha", trans.character)
+                        if not trans.direction in set([kLEFT, kRIGHT]):
+                            raise InvalidConfigBlock("TMTransition not in directions", trans.direction)
+                        self.d_table[state][char] = trans
+
                     except KeyError:
                         pass
+        self.reset()
 
-    def get_t(self, state: str, character: str) -> TMTransition:
+    def __get_t(self, state: str, character: str) -> TMTransition:
+        '''
+        lookup function for the TM delta table.
+        Returns a TMTransition dictating the
+        next state of the TM.
+        :param state: state to lookup
+        :param character: character to lookup
+        :return: the transition for this lookup
+        '''
         try:
-            trams = self.d_table[state][character]
-        except:
+            trans = self.d_table[state][character]
+        except KeyError:
             raise TMTransitionUndefined(state, character)
-        return
+        return trans
 
     def get_c(self) -> str:
-        ret_val = "{0}{1}{2}".format(str(self.loaded_tape)[:self.current_position - 1], \
+        '''
+        generates a configuration string for the
+        current state of the machine. Configuration
+        strings consist of the contents of the tape,
+        with the current state embedded at the position
+        of the head
+        :return: the configuration string
+        '''
+        ret_val = "{0}{1}{2}".format(str(self.loaded_tape)[:self.current_position], \
                                      str(self.current_state), \
                                      str(self.loaded_tape)[self.current_position:])
         return ret_val
 
     def step(self) -> str:
-        trans = self.get_t(self.current_state, self.loaded_tape.read(self.current_position))
+        '''
+        performs a single step of the TM's execution
+        returns a string detailing the resulting
+        configuration
+        :return: configuration string
+        '''
+        trans = self.__get_t(self.current_state, self.loaded_tape.read(self.current_position))
         self.current_state = trans.state
         self.loaded_tape.write(trans.character, self.current_position)
         if trans.direction == kRIGHT:
@@ -182,10 +217,20 @@ class TM(Machine):
         ret_val = "⊢{0}".format(self.get_c())
         return ret_val
 
-    def is_accepted(self):
+    def is_accepted(self)->bool:
+        '''
+        checks whether the current state of the machine
+        is in an accepted state
+        :return:
+        '''
         return self.current_state in self.accept
 
-    def __gen_config(self)->dict:
+    def __gen_config(self) -> dict:
+        '''
+        generates a configuration dictionary for output
+        either to file or to std out
+        :return: configuration dictionary
+        '''
         config = dict()
         config[kSTATES_PREFIX] = list(self.states)
         config[kSTATES_PREFIX].sort()
@@ -200,26 +245,71 @@ class TM(Machine):
         for state in self.d_table.keys():
             for char in state.keys():
                 try:
-                    config[kDTABLE_PREFIX][state][char] = str(self.get_t(state, char))
+                    config[kDTABLE_PREFIX][state][char] = str(self.__get_t(state, char))
                 except TMTransitionUndefined:
                     pass
         return config
 
     def export(self, filepath: str) -> None:
+        '''
+        writes the TMs configuration (states, alpha,
+        etc.) to a file.
+        :param filepath: file path and name
+        :return:
+        '''
         with open(filepath, "w+", encoding="utf-8") as f:
             json.dump(f, self.__gen_config(), indent=4, sort_keys=True)
 
-    def exec(self):
-        super().exec()
+    def exec(self) -> list:
+        '''
+        performs an execution of the TM. TM
+        runs until it halts either from:
+        1. entering a final state
+        2. entering a configuration without
+        a exiting transition
+        the execution is traces, with each step
+        string being added in sequence. Finally,
+        the accepted state of the machine is
+        appended to the trace
+        :return: trace list
+        '''
+        trace = list()
+        # initial config
+        trace.append(self.get_c())
+        while True:
+            try:
+                trace.append(self.step())
+                if self.is_accepted():
+                    break
+            except TMTransitionUndefined:
+                break
+        if self.is_accepted():
+            trace.append("Accepted: {0}".format(str(self.loaded_tape)))
+        else:
+            trace.append("Rejected: {0}".format(str(self.loaded_tape)))
+        return trace
+
+    def reset(self)->None:
+        self.current_state = self.start
+        self.current_position = 0
 
     def __init__(self, filepath=None):
-        # super().__init__(filepath)
+        '''
+        instantiates a member of the TM class
+        :param filepath: file path and name
+        '''
         self.current_state = None
         self.current_position = 0
         self.loaded_tape = None
-        self.config(filepath)
+        if filepath:
+            self.config(filepath)
 
     def dumps(self) -> str:
+        '''
+        dumps the configuration of the TM to a
+        JSON formatted string
+        :return: json config
+        '''
         return json.dumps(self.__gen_config(), indent=4, sort_keys=True)
 
 
@@ -662,4 +752,10 @@ class Tape:
 
 
 if __name__ == "__main__":
-    pass
+    filepath = os.path.join(os.path.abspath("/"), "Dropbox",  "CS5800", "proj",  "configs", "ex_821.tm")
+    myMT = TM(filepath)
+    myTape = Tape("БabbbababbaБ")
+    myMT.load(myTape)
+    #print(myMT.get_c())
+    for config in myMT.exec():
+        print(config)
