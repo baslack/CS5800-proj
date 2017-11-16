@@ -3,6 +3,7 @@ import copy
 import sys
 import os
 import collections
+import re
 
 kSTATES_PREFIX = "States"
 kALPHA_PREFIX = "Alphabet"
@@ -217,7 +218,7 @@ class TM(Machine):
         ret_val = "⊢{0}".format(self.get_c())
         return ret_val
 
-    def is_accepted(self)->bool:
+    def is_accepted(self) -> bool:
         '''
         checks whether the current state of the machine
         is in an accepted state
@@ -289,7 +290,7 @@ class TM(Machine):
             trace.append("Rejected: {0}".format(str(self.loaded_tape)))
         return trace
 
-    def reset(self)->None:
+    def reset(self) -> None:
         self.current_state = self.start
         self.current_position = 0
 
@@ -735,6 +736,15 @@ class InvalidConfigBlock(Exception):
 
 
 class Tape:
+    def __getitem__(self, item: int) -> str:
+        return self.read(item)
+
+    def __setitem__(self, key: int, value: str) -> None:
+        self.write(value, key)
+
+    def __add__(self, other: "Tape") -> "Tape":
+        return Tape(str(self) + str(other))
+
     def __init__(self, in_string):
         self.characters = list(in_string)
 
@@ -750,12 +760,23 @@ class Tape:
     def write(self, character, position):
         self.characters[position] = character
 
+
 class TMTape(Tape):
     '''
     Implements an infinite tape for use in
     Turing Machines
     '''
-    def write(self, character: str, position: int)->None:
+
+    def __getitem__(self, item: int) -> str:
+        return super().read(item)
+
+    def __setitem__(self, key: int, value: str) -> None:
+        return super().write(value, key)
+
+    def __add__(self, other: "TMTape") -> "TMTape":
+        return TMTape(str(self).lstrip(kBLANK) + str(other).rstrip(kBLANK))
+
+    def write(self, character: str, position: int) -> None:
         '''
         writes a character to a specified position
         on the tape.
@@ -781,8 +802,7 @@ class TMTape(Tape):
                     self.neg_index.append(kBLANK)
                 self.neg_index[position] = character
 
-
-    def __str__(self)->str:
+    def __str__(self) -> str:
         '''
         returns a string of the contents of the tape
         :return: tape string
@@ -793,9 +813,9 @@ class TMTape(Tape):
             neg_str = character + neg_str
         for character in self.pos_index[0:]:
             pos_str = pos_str + character
-        return "{0}{1}".format(neg_str,pos_str)
+        return "{0}{1}".format(neg_str, pos_str)
 
-    def read(self, position: int)->str:
+    def read(self, position: int) -> str:
         '''
         gets the character at the specified position.
         because the tape is infinite, if it's outside
@@ -811,7 +831,6 @@ class TMTape(Tape):
                 return self.neg_index[-position]
         except IndexError:
             return kBLANK
-
 
     def __init__(self, in_string):
         '''
@@ -829,11 +848,11 @@ class TMTape(Tape):
 
 
 if __name__ == "__main__":
-    filepath = os.path.join(os.path.abspath("/"), "Dropbox",  "CS5800", "proj",  "configs", "ex_821.tm")
+    filepath = os.path.join(os.path.abspath("/"), "Dropbox", "CS5800", "proj", "configs", "ex_821.tm")
     myMT = TM(filepath)
     myTape = TMTape("abbbababba")
     myMT.load(myTape)
-    #print(myMT.get_c())
+    # print(myMT.get_c())
     for config in myMT.exec():
         print(config)
-    # print(myMT.dumps())
+        # print(myMT.dumps())
