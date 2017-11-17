@@ -20,6 +20,7 @@ kEMPTYSET = "∅"
 kBLANK = "Б"
 kLEFT = "←"
 kRIGHT = "→"
+kSTATIONARY = "↓"
 
 
 def generateConfigDFA():
@@ -121,6 +122,8 @@ class TMTransition():
 
     def __parse(self, string: str) -> None:
         parts = string.split(",")
+        if len(parts) != 3:
+            raise BadTMTransition(string)
         parts = [x.strip(" ") for x in parts]
         self.state = parts[0]
         self.character = parts[1]
@@ -213,8 +216,9 @@ class TM(Machine):
         self.loaded_tape.write(trans.character, self.current_position)
         if trans.direction == kRIGHT:
             self.current_position += 1
-        else:
+        elif trans.direction == kLEFT:
             self.current_position -= 1
+
         ret_val = "⊢{0}".format(self.get_c())
         return ret_val
 
