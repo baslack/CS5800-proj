@@ -129,21 +129,21 @@ class TMTransition():
 
 class TM(Machine):
     def load(self, tape: "Tape") -> None:
-        '''
+        """
         loads a "tape" object into the machine
         :param tape: tape containing string to be processed
         :return:
-        '''
+        """
         super().load(tape)
 
     def config(self, filepath: str) -> None:
-        '''
+        """
         configures the Turing Machine with a
         given config file. Config files are
         JSON formatted text files.
         :param filepath: file name and path to the config file
         :return:
-        '''
+        """
         with open(filepath, "r", encoding="utf-8") as f:
             config = json.load(f)
             self.states = set(config[kSTATES_PREFIX])
@@ -173,14 +173,14 @@ class TM(Machine):
         self.reset()
 
     def __get_t(self, state: str, character: str) -> TMTransition:
-        '''
+        """
         lookup function for the TM delta table.
         Returns a TMTransition dictating the
         next state of the TM.
         :param state: state to lookup
         :param character: character to lookup
         :return: the transition for this lookup
-        '''
+        """
         try:
             trans = self.d_table[state][character]
         except KeyError:
@@ -188,26 +188,26 @@ class TM(Machine):
         return trans
 
     def get_c(self) -> str:
-        '''
+        """
         generates a configuration string for the
         current state of the machine. Configuration
         strings consist of the contents of the tape,
         with the current state embedded at the position
         of the head
         :return: the configuration string
-        '''
+        """
         ret_val = "{0}{1}{2}".format(str(self.loaded_tape)[:self.current_position], \
                                      str(self.current_state), \
                                      str(self.loaded_tape)[self.current_position:])
         return ret_val
 
     def step(self) -> str:
-        '''
+        """
         performs a single step of the TM's execution
         returns a string detailing the resulting
         configuration
         :return: configuration string
-        '''
+        """
         trans = self.__get_t(self.current_state, self.loaded_tape.read(self.current_position))
         self.current_state = trans.state
         self.loaded_tape.write(trans.character, self.current_position)
@@ -219,19 +219,19 @@ class TM(Machine):
         return ret_val
 
     def is_accepted(self) -> bool:
-        '''
+        """
         checks whether the current state of the machine
         is in an accepted state
         :return:
-        '''
+        """
         return self.current_state in self.accept
 
     def __gen_config(self) -> dict:
-        '''
+        """
         generates a configuration dictionary for output
         either to file or to std out
         :return: configuration dictionary
-        '''
+        """
         config = dict()
         config[kSTATES_PREFIX] = list(self.states)
         config[kSTATES_PREFIX].sort()
@@ -252,17 +252,17 @@ class TM(Machine):
         return config
 
     def export(self, filepath: str) -> None:
-        '''
+        """
         writes the TMs configuration (states, alpha,
         etc.) to a file.
         :param filepath: file path and name
         :return:
-        '''
+        """
         with open(filepath, "w+", encoding="utf-8") as f:
             json.dump(f, self.__gen_config(), indent=4, sort_keys=True, ensure_ascii=False)
 
     def exec(self) -> list:
-        '''
+        """
         performs an execution of the TM. TM
         runs until it halts either from:
         1. entering a final state
@@ -273,7 +273,7 @@ class TM(Machine):
         the accepted state of the machine is
         appended to the trace
         :return: trace list
-        '''
+        """
         trace = list()
         # initial config
         trace.append(self.get_c())
@@ -284,10 +284,12 @@ class TM(Machine):
                     break
             except TMTransitionUndefined:
                 break
-        if self.is_accepted():
+        if self.is_accepted() and self.accept != set():
             trace.append("Accepted: {0}".format(str(self.loaded_tape)))
-        else:
+        elif self.accept != set():
             trace.append("Rejected: {0}".format(str(self.loaded_tape)))
+        else:
+            trace.append("Halted: {0}".format(str(self.loaded_tape)))
         return trace
 
     def reset(self) -> None:
@@ -295,10 +297,10 @@ class TM(Machine):
         self.current_position = 0
 
     def __init__(self, filepath=None):
-        '''
+        """
         instantiates a member of the TM class
         :param filepath: file path and name
-        '''
+        """
         self.current_state = None
         self.current_position = 0
         self.loaded_tape = None
@@ -306,11 +308,11 @@ class TM(Machine):
             self.config(filepath)
 
     def dumps(self) -> str:
-        '''
+        """
         dumps the configuration of the TM to a
         JSON formatted string
         :return: json config
-        '''
+        """
         return json.dumps(self.__gen_config(), indent=4, sort_keys=True, ensure_ascii=False)
 
 
@@ -762,10 +764,10 @@ class Tape:
 
 
 class TMTape(Tape):
-    '''
+    """
     Implements an infinite tape for use in
     Turing Machines
-    '''
+    """
 
     def __getitem__(self, item: int) -> str:
         return super().read(item)
@@ -777,13 +779,13 @@ class TMTape(Tape):
         return TMTape(str(self).lstrip(kBLANK) + str(other).rstrip(kBLANK))
 
     def write(self, character: str, position: int) -> None:
-        '''
+        """
         writes a character to a specified position
         on the tape.
         :param character: character to be added to the string
         :param position: index of the location to add the character
         :return:
-        '''
+        """
         if position == 0:
             self.pos_index[0] = character
             self.neg_index[0] = character
@@ -803,10 +805,10 @@ class TMTape(Tape):
                 self.neg_index[position] = character
 
     def __str__(self) -> str:
-        '''
+        """
         returns a string of the contents of the tape
         :return: tape string
-        '''
+        """
         neg_str = ""
         pos_str = ""
         for character in self.neg_index[1:]:
@@ -816,14 +818,14 @@ class TMTape(Tape):
         return "{0}{1}".format(neg_str, pos_str)
 
     def read(self, position: int) -> str:
-        '''
+        """
         gets the character at the specified position.
         because the tape is infinite, if it's outside
         of the previously specified range, returns a
         blank character
         :param position: index to read
         :return: the character at that position
-        '''
+        """
         try:
             if position >= 0:
                 return self.pos_index[position]
@@ -833,11 +835,11 @@ class TMTape(Tape):
             return kBLANK
 
     def __init__(self, in_string):
-        '''
+        """
         returns an instance of the TMtape class
         based on the input string
         :param in_string:
-        '''
+        """
         self.neg_index = list()
         self.pos_index = list()
         self.pos_index.append(kBLANK)
