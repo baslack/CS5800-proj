@@ -105,6 +105,9 @@ class BadTMTransition(Exception):
 class TMTransitionUndefined(Exception):
     pass
 
+class BadCharacterInTape(Exception):
+    pass
+
 
 class TMTransition():
     def __init__(self, *args):
@@ -137,7 +140,10 @@ class TM(Machine):
         :param tape: tape containing string to be processed
         :return:
         """
-        super().load(tape)
+        if not set(str(tape)).issubset(self.tapealpha):
+            raise BadCharacterInTape(set(str(tape)).difference(self.tapealpha))
+        else:
+            super().load(tape)
 
     def config(self, filepath: str) -> None:
         """
@@ -852,7 +858,7 @@ class TMTape(Tape):
         self.pos_index.append(kBLANK)
         self.neg_index.append(kBLANK)
 
-""" 
+
 if __name__ == "__main__":
     filepath = os.path.join(os.path.abspath("/"), "Dropbox", "CS5800", "proj", "configs", "ex_821.tm")
     myMT = TM(filepath)
@@ -862,4 +868,3 @@ if __name__ == "__main__":
     for config in myMT.exec():
         print(config)
         # print(myMT.dumps())
-"""
