@@ -852,7 +852,7 @@ class TMTape(Tape):
         self.pos_index.append(kBLANK)
         self.neg_index.append(kBLANK)
 
-
+""" 
 if __name__ == "__main__":
     filepath = os.path.join(os.path.abspath("/"), "Dropbox", "CS5800", "proj", "configs", "ex_821.tm")
     myMT = TM(filepath)
@@ -862,3 +862,4 @@ if __name__ == "__main__":
     for config in myMT.exec():
         print(config)
         # print(myMT.dumps())
+"""
