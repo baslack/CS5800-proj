@@ -105,9 +105,6 @@ class BadTMTransition(Exception):
 class TMTransitionUndefined(Exception):
     pass
 
-class BadCharacterInTape(Exception):
-    pass
-
 
 class TMTransition():
     def __init__(self, *args):
@@ -141,7 +138,7 @@ class TM(Machine):
         :return:
         """
         if not set(str(tape)).issubset(self.tapealpha):
-            raise BadCharacterInTape(set(str(tape)).difference(self.tapealpha))
+            raise InvalidCharacterInTape(set(str(tape)).difference(self.tapealpha))
         else:
             super().load(tape)
 
