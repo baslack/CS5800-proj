@@ -8,9 +8,12 @@ if __name__ == "__main__":
     # this obviously needs to be turned into something that
     # gets a valid path from the user. We can't have it hard
     # coded like this.
-    filepath = os.path.join(os.path.expanduser("~"), "Documents", "5800", "CS5800-proj", "configs", "ex_821.tm")
-    tm = machine.TM(filepath)
-    value = input("Please input the tape you want to use?")
+    print("HELLO")
+    pass
+
+    """ 
+    #f.close()
+    #value = input("Please input the tape you want to use?")
     # Benjamin Slack: 11.29.17
     # Andrew, this is likely something you can do easier
     # the TM has data members containing is tape alphabet
@@ -45,4 +48,5 @@ if __name__ == "__main__":
         # Character other then . a-z 0-9 was found
         print("The input entered is invalid. The input must only be the characters a or b")
         sys.exit()
-    pass
+        """
+
