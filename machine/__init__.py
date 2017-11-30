@@ -827,7 +827,7 @@ class TMTape(Tape):
             pos_str += kBLANK
         try:
             if (neg_str[-1] != kBLANK):
-                neg_str += kBLANK
+                neg_str = kBLANK + neg_str
         except IndexError:
             pass
         return "{0}{1}".format(neg_str, pos_str)

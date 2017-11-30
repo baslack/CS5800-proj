@@ -7,13 +7,13 @@ class TestTMTape(TestCase):
         for i in range(10):
             if i > 0:
                 T.write("a", i)
-        T.write(T.read(10), 10)
+        #T.write(T.read(10), 10)
         self.assertEqual(str(T), machine.kBLANK+"aaaaaaaaa"+machine.kBLANK)
         for i in range(10):
             i = -i
             if i < 0:
                 T.write("b", i)
-        T.write(T.read(-10), -10)
+        #T.write(T.read(-10), -10)
         self.assertEqual(str(T), machine.kBLANK+"bbbbbbbbb"+machine.kBLANK+"aaaaaaaaa"+machine.kBLANK)
 
     def test_read(self):
