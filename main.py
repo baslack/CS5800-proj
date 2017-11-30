@@ -4,12 +4,29 @@ import os
 import sys
 
 if __name__ == "__main__":
-    # Benjamin Slack: 11.29.17
-    # this obviously needs to be turned into something that
-    # gets a valid path from the user. We can't have it hard
-    # coded like this.
-    print("HELLO")
-    pass
+    path = input("Please input directory you want to use?")
+    if os.path.isfile(path) and os.access(path, os.R_OK):
+        print("Example as /home/brandon/Documents/5800/CS5800-proj/configs/ex_821.tm")
+        tm = machine.TM(path)
+        value = input("Please input the tape you want to use?")
+        print("You have entered:" + value)
+        mytape = machine.TMTape(value)
+        tm.load(mytape)
+        if ('a' in value) and ('b' in value):
+            for config in tm.exec():
+                print(config)
+                if 'Rejected:' in config:
+                    print("The input: " + value + " entered did NOT get to the final state of q3.")
+                    print("Therefore the input was REJECTED by this machine.")
+                elif 'Accepted:' in config:
+                    print("Congratulations: " + value + " was ACCEPTED because it reached the final state q3.")
+                    # else:
+                    # print("The input: " + value + " entered did HALTED.")
+        else:
+            print("The input entered is invalid. The input must only be the characters a or b")
+            sys.exit()
+    else:
+        print("Directory not exists.")
 
     """ 
     #f.close()
