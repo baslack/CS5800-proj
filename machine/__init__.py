@@ -266,7 +266,7 @@ class TM(Machine):
         :return:
         """
         with open(filepath, "w+", encoding="utf-8") as f:
-            json.dump(f, self.__gen_config(), indent=4, sort_keys=True, ensure_ascii=False)
+            json.dump(self.__gen_config(), f, indent=4, sort_keys=True, ensure_ascii=False)
 
     def exec(self) -> list:
         """
@@ -281,6 +281,7 @@ class TM(Machine):
         appended to the trace
         :return: trace list
         """
+        self.reset()
         trace = list()
         # initial config
         trace.append(self.get_c())
@@ -809,7 +810,7 @@ class TMTape(Tape):
             except IndexError:
                 for i in range((-position) - len(self.neg_index) + 1):
                     self.neg_index.append(kBLANK)
-                self.neg_index[position] = character
+                self.neg_index[-position] = character
 
     def __str__(self) -> str:
         """
@@ -857,9 +858,9 @@ class TMTape(Tape):
 
 
 if __name__ == "__main__":
-    filepath = os.path.join(os.path.abspath("/"), "Dropbox", "CS5800", "proj", "configs", "ex_821.tm")
+    filepath = os.path.join("..", "configs", "ex_821.tm")
     myMT = TM(filepath)
-    myTape = TMTape("abbbababba")
+    myTape = TMTape("aa")
     myMT.load(myTape)
     # print(myMT.get_c())
     for config in myMT.exec():
