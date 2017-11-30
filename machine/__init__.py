@@ -823,6 +823,13 @@ class TMTape(Tape):
             neg_str = character + neg_str
         for character in self.pos_index[0:]:
             pos_str = pos_str + character
+        if (pos_str[-1] != kBLANK):
+            pos_str += kBLANK
+        try:
+            if (neg_str[-1] != kBLANK):
+                neg_str += kBLANK
+        except IndexError:
+            pass
         return "{0}{1}".format(neg_str, pos_str)
 
     def read(self, position: int) -> str:
@@ -840,6 +847,7 @@ class TMTape(Tape):
             else:
                 return self.neg_index[-position]
         except IndexError:
+            # self.write(kBLANK, position)
             return kBLANK
 
     def __init__(self, in_string):
