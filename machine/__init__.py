@@ -293,11 +293,11 @@ class TM(Machine):
             except TMTransitionUndefined:
                 break
         if self.is_accepted() and self.accept != set():
-            trace.append("Accepted: {0}".format(str(self.loaded_tape)))
+            trace.append("Accepted: {0}".format(str(self.loaded_tape).replace(kBLANK, " ")))
         elif self.accept != set():
-            trace.append("Rejected: {0}".format(str(self.loaded_tape)))
+            trace.append("Rejected: {0}".format(str(self.loaded_tape).replace(kBLANK, " ")))
         else:
-            trace.append("Halted: {0}".format(str(self.loaded_tape)))
+            trace.append("Halted: {0}".format(str(self.loaded_tape).replace(kBLANK, " ")))
         return trace
 
     def reset(self) -> None:
